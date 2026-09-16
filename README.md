@@ -117,4 +117,8 @@ The API validates inputs before database writes and responds with a consistent `
 - Every new inspection starts as Open and cannot be reopened in this MVP.
 - Date filters use the inspection date, not the record-creation timestamp; both range bounds are inclusive.
 - Machine/line IDs remain free text as specified in the assignment.
-- With more time, I would add pagination for large inspection volumes, an audit trail, session persistence across API restarts, and offline synchronization.
+- With more time, I would add pagination for large inspection volumes, an audit trail, and session persistence across API restarts.
+
+### Offline support
+
+New inspections are queued in browser `localStorage` when the API is unavailable or the device is offline. The queue is retried when the app starts and when the browser fires the `online` event. Pending records remain on the device until the API accepts them, and the tracker shows the number waiting to sync. Clearing browser storage removes unsynced inspections, so reconnect before clearing site data.

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { request } from "../utils/common";
 
+const AUTH_USER_KEY = "quality_tracker_authenticated_user";
+
 export default function AuthGate({ children }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -12,7 +14,10 @@ export default function AuthGate({ children }) {
   useEffect(() => {
     request("/api/auth/session")
       .then((response) => setSession(response.data))
-      .catch(() => {})
+      .catch(() => {
+        const cachedUser = localStorage.getItem(AUTH_USER_KEY);
+        if (cachedUser) setSession({ username: cachedUser });
+      })
       .finally(() => setIsChecking(false));
   }, []);
 
@@ -25,12 +30,14 @@ export default function AuthGate({ children }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
       });
+      localStorage.setItem(AUTH_USER_KEY, response.data.username);
       setSession(response.data);
     } catch (loginError) { setError(loginError.message); } finally { setIsSubmitting(false); }
   }
 
   async function handleLogout() {
     await request("/api/auth/logout", { method: "POST" });
+    localStorage.removeItem(AUTH_USER_KEY);
     setSession(null);
   }
 

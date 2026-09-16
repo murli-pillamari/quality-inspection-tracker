@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { initialForm, initialFilters } from "../constants";
-import { request } from "../utils/common";
+import { readPendingInspections, request, writePendingInspections } from "../utils/common";
 
 export function useInspectionTracker() {
   const [form, setForm] = useState(initialForm);
@@ -14,6 +14,7 @@ export function useInspectionTracker() {
   const [notice, setNotice] = useState("");
   const [resolving, setResolving] = useState(null);
   const [resolutionNote, setResolutionNote] = useState("");
+  const [pendingInspections, setPendingInspections] = useState(() => readPendingInspections());
 
   const queryString = useMemo(() => {
     const query = new URLSearchParams();
@@ -34,6 +35,38 @@ export function useInspectionTracker() {
 
   useEffect(() => { loadDashboard(); }, [queryString]);
 
+  async function syncPendingInspections() {
+    const queued = readPendingInspections();
+    if (!queued.length || !navigator.onLine) return;
+
+    const remaining = [];
+    for (const queuedInspection of queued) {
+      try {
+        await request("/api/inspections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(queuedInspection.payload)
+        });
+      } catch {
+        remaining.push(queuedInspection);
+      }
+    }
+
+    writePendingInspections(remaining);
+    setPendingInspections(remaining);
+    if (remaining.length < queued.length) {
+      const syncedCount = queued.length - remaining.length;
+      setNotice(`${syncedCount} offline inspection${syncedCount === 1 ? "" : "s"} synced.`);
+      await loadDashboard();
+    }
+  }
+
+  useEffect(() => {
+    syncPendingInspections();
+    window.addEventListener("online", syncPendingInspections);
+    return () => window.removeEventListener("online", syncPendingInspections);
+  }, []);
+
   const updateForm = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
   const updateFilter = (event) => setFilters((current) => ({ ...current, [event.target.name]: event.target.value }));
 
@@ -42,7 +75,17 @@ export function useInspectionTracker() {
     try {
       await request("/api/inspections", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       setForm(initialForm); setNotice("Inspection logged and added to the tracker."); await loadDashboard();
-    } catch (submitError) { setError(submitError.message); } finally { setIsSubmitting(false); }
+    } catch (submitError) {
+      const isUnavailable = submitError.name === "TypeError" || [502, 503, 504].includes(submitError.status);
+      if (!isUnavailable) {
+        setError(submitError.message);
+        return;
+      }
+      const queuedInspection = { localId: crypto.randomUUID(), payload: { ...form }, queuedAt: new Date().toISOString() };
+      const queued = [...readPendingInspections(), queuedInspection];
+      writePendingInspections(queued); setPendingInspections(queued); setForm(initialForm);
+      setNotice("No connection. Inspection saved on this device and will sync automatically.");
+    } finally { setIsSubmitting(false); }
   }
 
   async function handleResolve(event) {
@@ -57,7 +100,7 @@ export function useInspectionTracker() {
   const totalResolved = summary.reduce((total, item) => total + item.resolved, 0);
 
   return {
-    form, filters, setFilters, setAppliedFilters, inspections, summary,
+    form, filters, setFilters, setAppliedFilters, inspections, summary, pendingInspections,
     isLoading, isSubmitting, error, notice, resolving, setResolving,
     resolutionNote, setResolutionNote, totalOpen, totalResolved,
     updateForm, updateFilter, handleCreate, handleResolve,
