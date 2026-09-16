@@ -19,8 +19,43 @@ A mobile-first web application for shop-floor supervisors to log, track, and res
 2. In one terminal, run `npm run start:api`.
 3. In a second terminal, run `npm run dev`.
 4. Open the local Vite URL shown in the second terminal (normally `http://localhost:5173`).
+5. On the login screen, use `admin` as both the username and password. The app uses simple session-based authentication for local development.
+
 
 The frontend's Vite development server proxies `/api` calls to the API on port `3001`. The API creates its local SQLite database at `server/data/quality-inspections.db` on first startup. To use another API port, set both `PORT` and the proxy target in `vite.config.js`.
+## Screenshots
+
+### Login
+
+The authentication screen prompts users to sign in before accessing the Quality Inspection Tracker.
+
+<img width="285" height="445" alt="Login screen" src="https://github.com/user-attachments/assets/4c2edf1a-938c-4dea-89be-58f37652bf45" />
+
+### Inspection Dashboard
+
+The dashboard combines the inspection form, severity summary, filters, live inspection register, and resolution workflow.
+
+<img height="445" alt="Inspection dashboard" src="https://github.com/user-attachments/assets/9ee71a27-0ea7-4532-ae72-d4992d470408" />
+
+### Mobile Layout
+
+The interface is responsive and optimized for shop-floor use on narrow mobile viewports.
+
+<img height="445" alt="Mobile inspection form" src="https://github.com/user-attachments/assets/926169f3-391f-42a5-ae8b-c4acdfa1b54a" />
+
+<img height="445" alt="Mobile inspection dashboard" src="https://github.com/user-attachments/assets/f3386dea-4630-4c70-b585-283a32fa09bd" />
+
+<img height="445" alt="Mobile inspection register" src="https://github.com/user-attachments/assets/3f29ef4e-fd4e-4691-87d4-25817ea37ae3" />
+
+<img  height="445" alt="Mobile inspection filters" src="https://github.com/user-attachments/assets/5fe41c76-6618-4413-8c12-310603f8df28" />
+
+### Offline Queue
+
+When the API is unavailable, newly logged inspections are stored locally and displayed with a pending-sync indicator. Once connectivity is restored, the pending inspections are automatically synchronized with the backend.
+
+<img height="445" alt="Offline inspection queue" src="https://github.com/user-attachments/assets/4171ed12-9c4d-4499-9e23-5d22d7dd971c" />
+
+<img height="445" alt="Pending inspection sync" src="https://github.com/user-attachments/assets/6d919651-c6e0-48d3-8e60-90f4acfea806" />
 
 ## API reference
 
