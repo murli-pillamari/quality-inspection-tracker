@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Aptos", "Segoe UI", sans-serif;
+}
+
+html { background: #f8fafc; }
+body { min-width: 320px; min-height: 100vh; }
+button, input, select, textarea { font: inherit; }
+
+@layer components {
+  .input {
+    @apply w-full min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100;
+  }
+}
